@@ -1,0 +1,49 @@
+%% This script takes excel file data and plots it
+file = '6w_set1_Contraction_analysis_AH.xlsx';
+file = '7w_set2_Contraction_analysis_AH.xlsx';
+file = '7w_setfinal_Contraction_analysis_AH.xlsx';
+file = '8w_set4_Contraction_analysis_AH.xlsx';
+
+sheet = 'Summary';
+
+mkdir 'AH_plots';
+
+data = xlsread(file,sheet,'c1:dkl36');
+[num, names, raw] = xlsread(file,sheet,'a1:a36');
+
+%peak detector
+for n = 1:36
+    trace = data(n,:);
+    start = 1; 
+    stop = 25;
+    finish = 3001;
+    peaks = [];
+    amplitudes = [];
+    while start<2976
+        ROI = trace(start:stop);
+        med = median(ROI);
+        [val, ind] = max(ROI);
+        if val>med+200
+            peaks = [peaks,ind+start-1];
+            amplitudes = [amplitudes, trace(ind+start-1)-med];
+            start = start+ind+25;
+            stop = stop+ind+25;
+        else
+            start = start+25;
+            stop = stop+25;
+        end
+    end
+    f = figure('visible','off');
+    plot(trace)
+    hold on
+    scatter(peaks,trace(peaks))
+    title(names{n}(1:end-1));
+    saveas(f,strcat('AH_plots/',names{n}(1:end-1)),'tiff')
+    if numel(peaks)>0
+        xlswrite(file,peaks,'PeakTime_lowercutoff',strcat('b',int2str(n)));
+        xlswrite(file,amplitudes,'PeakAmplitude_lowercutoff',strcat('b',int2str(n)));
+    end
+end
+
+xlswrite(file,names,'PeakTime_lowercutoff','a1');
+xlswrite(file,names,'PeakAmplitude_lowercutoff','a1');
